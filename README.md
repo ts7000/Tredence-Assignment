@@ -4,52 +4,92 @@ Visual HR workflow builder that lets people teams sketch processes, configure ea
 
 ## Architecture
 - **App Router + TypeScript (Next.js 16)** keeps UI, API mocks, and utility code colocated under `app/`, enabling server/client boundary control while staying deploy-ready for Vercel.
-- **State layer (`app/store/workflow-store.ts`)** uses Zustand to keep a single source of truth for nodes, edges, selection, and validation errors. Every UI surface (canvas, config forms, simulation drawer) subscribes to the same store for instant sync.
-- **Canvas + Node system** (`workflow-canvas.tsx`, `workflow-node.tsx`) renders a custom, lightweight graph surface: drag-and-drop from the sidebar, move nodes, and draw edges without pulling in a heavy diagramming library.
-- **Node configuration forms** (`app/components/node-configs/*`) rely on React Hook Form so every keystroke immediately dispatches updates to the store, keeping the rendered node label, validation, and serialization in lockstep.
-- **Validation + Simulation utilities** (`app/utils/validation.ts`, `app/api/simulation.ts`, `app/utils/serialization.ts`) stay framework-agnostic. They gate Start/End rules, detect cycles, and convert workflows into human-readable execution steps for the simulation modal.
-- **UI foundation** combines Tailwind CSS, Radix primitives, and custom components (`app/components/*`, `components/ui/*`) for consistent spacing, motion, and theming via `app/globals.css` and `components/theme-provider.tsx`.
+- **State layer** (`app/store/workflow-store.ts`) uses Zustand to maintain a single source of truth for nodes, edges, selection, and validation errors. Every UI surface (canvas, config forms, simulation drawer) subscribes to the same store for instant sync.
+- **Canvas + Node system** (`workflow-canvas.tsx`, `workflow-node.tsx`) renders a custom, lightweight graph surface: drag-and-drop from the sidebar, move nodes, and draw edges without external diagramming libraries.
+- **Node configuration forms** (`app/components/node-configs/*`) use React Hook Form for controlled inputs with live validation and instant store updates.
+- **Templates system** (`components/templates-panel.tsx`) provides 4 pre-built workflows with nodes and connections that users can customize.
+- **Layout utilities** (`app/utils/layout.ts`) implements hierarchical and force-directed layout algorithms for automatic node arrangement.
+- **Export/Import hooks** (`app/hooks/use-export-import.ts`) handle workflow serialization with file I/O and JSON validation.
+- **Validation + Simulation utilities** (`app/utils/validation.ts`, `app/api/simulation.ts`, `app/utils/serialization.ts`) stay framework-agnostic and can be reused server-side.
+- **UI foundation** combines Tailwind CSS, Radix primitives, and custom components for consistent spacing, motion, and theming.
+
+## Features
+### Core Features
+- **Drag-and-drop node palette** – 5 node types (Start, Task, Approval, Automated, End) with contextual configurations
+- **Interactive canvas** – Move nodes, draw connections, delete edges, and organize your workflow visually
+- **Live validation** – Real-time feedback on missing Start/End nodes, orphaned steps, cycles, and connection rules
+- **Simulation engine** – Preview workflow execution paths with readable step descriptions and error detection
+- **Workflow serialization** – Export workflows as JSON and import saved configurations
+
+### New Enhancements
+- **Pre-built templates** – Load one of 4 industry templates:
+  - Basic Approval Flow (Start → Approval → End)
+  - Task + Approval Pair (Start → Task → Approval → End)
+  - Employee Onboarding (multi-step HR onboarding with parallel tasks)
+  - Leave Request (Request → Manager Approval → Auto-notification → End)
+- **Auto-layout** – Intelligently arrange nodes in a hierarchical layout with one click
+- **Export/Import workflows** – Save workflows as timestamped JSON files and import them later with validation
+- **Toast notifications** – Visual feedback for all actions (save, export, import, layout, validation)
 
 ## Getting Started
 1. **Install prerequisites**
-	- Node.js 20+ (matches Next 16 requirements)
-	- pnpm 9 (`corepack enable pnpm` on macOS/Linux)
+	- Node.js 18+ 
+	- npm or pnpm
 2. **Install dependencies**
 	```bash
-	pnpm install
+	npm install
 	```
 3. **Run the app locally**
 	```bash
-	pnpm dev
+	npm run dev
 	```
-	Visit `http://localhost:3000` and start dragging nodes.
-4. **Lint / type-check / production build**
+	Visit `http://localhost:3000` and start building workflows.
+4. **Build and deploy**
 	```bash
-	pnpm lint      # ESLint + TypeScript
-	pnpm build     # Creates a production build
-	pnpm start     # Serves the optimized build
+	npm run build    # Creates a production build
+	npm run start    # Serves the optimized build
+	npm run lint     # Run ESLint
 	```
+
+## Quick Start Guide
+1. **Create a workflow from scratch**: Drag nodes from the sidebar onto the canvas
+2. **Or use a template**: Click the purple "Templates" button in the sidebar to load a pre-built workflow
+3. **Configure nodes**: Click on any node to open its configuration panel on the right
+4. **Draw connections**: Click the connection point on any node and drag to another node
+5. **Validate**: Click "Validate" in the top bar to check for errors
+6. **Export**: Click "Export" to download your workflow as JSON
+7. **Import**: Click "Import" to load a previously saved workflow
+8. **Auto-arrange**: Click "Layout" to automatically organize all nodes
 
 ## Design Decisions
-- **Single-store graph model** simplifies undo/redo and serialization because every node/edge mutation goes through one predictable slice.
-- **React Hook Form for node editors** offers controlled inputs with minimal re-renders and unlocks future validation schemas (Zod, RHF resolvers) per node type.
-- **Custom canvas over off-the-shelf diagram libs** keeps the interaction model focused (linear HR flows) and gave flexibility for bespoke touches like snapping, connection guards, and empty-state messaging.
-- **Pure functions for validation/simulation** makes it easy to port the same logic to a backend worker later without rewrites.
-- **Mock API layer** (`app/api/automations.ts`, `app/api/simulation.ts`) mirrors future integrations (automation catalog, run previews) so the UI contract is already defined.
+- **Single-store graph model** simplifies state management and serialization because every node/edge mutation goes through one predictable action.
+- **React Hook Form for node editors** offers controlled inputs with minimal re-renders and enables future extensibility.
+- **Custom canvas over off-the-shelf diagram libs** keeps the interaction model focused on linear HR flows while maintaining flexibility for custom interactions.
+- **Template system** reduces friction for users by providing proven workflow patterns they can start with and customize.
+- **Automatic layout algorithms** help users organize complex workflows without manual positioning, improving usability.
+- **Client-side file I/O** for export/import allows instant workflows without backend latency, with validation to ensure data integrity.
+- **Pure functions for validation/simulation** makes logic testable and portable to backend workers.
+- **Mock API layer** mirrors future integrations (automation catalog, run previews) so the UI contract is defined upfront.
 
 ## Delivered Scope vs. Next Iterations
-### ✅ Completed in this submission
-- Drag-and-drop palette, movable nodes, and interactive edge creation/deletion on the canvas.
-- Type-specific config panels (Start/Task/Approval/Automated/End) with live-updating labels and contextual helper text.
-- Validation banner + toast system surfacing missing Start/End nodes, orphaned steps, and loop detection before export.
-- Simulation panel that reuses validation, generates readable execution steps, and highlights warnings/errors.
-- Workflow serialization to downloadable JSON plus helper descriptions for handoff to downstream systems.
-- Polished UI shell (TopBar, Sidebar, config drawer, overlays) with responsive layout and accessible focus styles.
+### Completed in this submission
+- Drag-and-drop palette, movable nodes, and interactive edge creation/deletion
+- Type-specific config panels with live-updating labels and contextual help
+- Validation banner + toast notifications for errors and actions
+- Simulation panel with readable execution steps and error highlighting
+- **Templates system with 4 pre-built workflow patterns**
+- **Auto-layout feature for hierarchical node arrangement**
+- **Export/Import workflow functionality with validation**
+- Workflow serialization to JSON format
+- Polished UI with TopBar, Sidebar, config drawer, and responsive layout
 
-### ✨ What I would add with more time
-- **Persistence + import**: save/load workflows from local storage or a backend, plus version history.
-- **Branching logic + conditions**: support parallel paths, guard rails (e.g., auto-approval threshold logic), and visual indicators for split/merge nodes.
-- **Execution telemetry**: store simulation runs, show timing estimates, and surface SLA breaches.
-- **Collaboration**: presence indicators, commenting, and optional realtime editing via WebSockets or Liveblocks.
-- **Robust testing**: unit tests for validators/serializers and Playwright coverage for drag/drop and simulation flows.
-- **Accessibility & performance**: keyboard-driven node placement, reduced-motion mode, and virtualization for large workflows.
+### Potential Enhancements
+- **Persistence layer** – Save/load workflows from backend database with version history
+- **Branching & conditions** – Support parallel paths, guards, and conditional logic
+- **Execution telemetry** – Store simulation runs, timing estimates, and SLA tracking
+- **Collaboration features** – Real-time presence, comments, and collaborative editing
+- **Advanced testing** – Unit tests for validators, Playwright E2E tests for workflows
+- **Accessibility improvements** – Keyboard-driven workflow building, reduced-motion mode
+- **Performance optimization** – Virtualization for large workflows, lazy-loading templates
+- **Undo/Redo** – Full history stack for workflow modifications
+- **Workflow analytics** – Track most used steps, common patterns, execution metrics
