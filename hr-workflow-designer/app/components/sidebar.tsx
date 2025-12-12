@@ -2,14 +2,15 @@
 
 import type React from "react"
 import type { NodeType } from "@/app/types"
-import { Play, Plus } from "lucide-react"
+import { Play, Plus, Zap } from "lucide-react"
 
 interface SidebarProps {
   onNodeDragStart: (type: NodeType) => void
   onSimulate: () => void
+  onShowTemplates?: () => void
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onNodeDragStart, onSimulate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onNodeDragStart, onSimulate, onShowTemplates }) => {
   const nodeTypes: Array<{ type: NodeType; label: string; description: string }> = [
     { type: "start", label: "Start", description: "Begin your workflow" },
     { type: "task", label: "Task", description: "Manual step for someone" },
@@ -52,8 +53,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ onNodeDragStart, onSimulate })
         ))}
       </div>
 
+      {/* Templates Button */}
+      {onShowTemplates && (
+        <div className="border-t border-slate-200 p-4">
+          <button
+            onClick={onShowTemplates}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            Templates
+          </button>
+        </div>
+      )}
+
       {/* Simulate Button */}
-      <div className="border-t border-slate-200 p-4">
+      <div className={onShowTemplates ? "border-t border-slate-200 p-4" : "border-t border-slate-200 p-4"}>
         <button
           onClick={onSimulate}
           className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
